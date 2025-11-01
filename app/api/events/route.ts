@@ -23,6 +23,46 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: 'Image file is required' }, { status: 400 })
         }
 
+        // Validate and parse tags
+        const tagsRaw = formData.get('tags');
+        if (!tagsRaw) {
+            return NextResponse.json({ message: 'Tags field is required' }, { status: 400 })
+        }
+
+        let tags;
+        try {
+            tags = JSON.parse(tagsRaw as string);
+        } catch (e) {
+            return NextResponse.json({ 
+                message: 'Invalid JSON for tags', 
+                error: e instanceof Error ? e.message : 'Parse error' 
+            }, { status: 400 })
+        }
+
+        if (!Array.isArray(tags)) {
+            return NextResponse.json({ message: 'Tags must be an array' }, { status: 400 })
+        }
+
+        // Validate and parse agenda
+        const agendaRaw = formData.get('agenda');
+        if (!agendaRaw) {
+            return NextResponse.json({ message: 'Agenda field is required' }, { status: 400 })
+        }
+
+        let agenda;
+        try {
+            agenda = JSON.parse(agendaRaw as string);
+        } catch (e) {
+            return NextResponse.json({ 
+                message: 'Invalid JSON for agenda', 
+                error: e instanceof Error ? e.message : 'Parse error' 
+            }, { status: 400 })
+        }
+
+        if (!Array.isArray(agenda)) {
+            return NextResponse.json({ message: 'Agenda must be an array' }, { status: 400 })
+        }
+
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
@@ -35,7 +75,14 @@ export async function POST(req: NextRequest) {
 
         event.image = (uploadResult as { secure_url: string }).secure_url;
 
-        const createdEvent = await Event.create(event);
+        // pass in event but override tags and agenda
+        // ...event - spreadit properties of event (includes stringified tags and agenda)
+        // override tags and agenda with JSON parse
+        const createdEvent = await Event.create({
+            ...event,
+            tags: tags,
+            agenda: agenda,
+        });
 
         return NextResponse.json({ message: "Event created successfully", event: createdEvent }, { status: 201 })
     } catch (e) {
