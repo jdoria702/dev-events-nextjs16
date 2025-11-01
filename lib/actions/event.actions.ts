@@ -9,6 +9,10 @@ export const getSimilarEventsBySlug = async (slug: string) => {
 
         const event = await Event.findOne({ slug })
 
+        if (!event) {
+            return [];
+        }
+
         // _id must not be equal to the event we found about
         // how are we going to know what are similar? Tags
         // if event match tags of original, they must be similar
